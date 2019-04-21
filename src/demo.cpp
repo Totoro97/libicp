@@ -22,6 +22,7 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 // Demo program showing how libicp can be used
 
 #include <iostream>
+#include <algorithm>
 #include "icpPointToPlane.h"
 
 using namespace std;
@@ -54,6 +55,13 @@ int main (int argc, char** argv) {
     }
   }
 
+  for (int i = 0; i < num - 1; i++) {
+    int j = std::rand() % (num - i);
+    for (int t = 0; t < 3; t++) {
+      std::swap(M[i * 3 + t], M[(num - j - 1) * 3 + t]);
+    }
+  }
+
   // start with identity as initial transformation
   // in practice you might want to use some kind of prediction here
   Matrix R = Matrix::eye(3);
@@ -62,7 +70,7 @@ int main (int argc, char** argv) {
   // run point-to-plane ICP (-1 = no outlier threshold)
   cout << endl << "Running ICP (point-to-plane, no outliers)" << endl;
   IcpPointToPlane icp(M,num,dim);
-  double residual = icp.fit(T,num,R,t,-1);
+  double residual = icp.fit(T,5000,R,t,-1);
 
   // results
   cout << endl << "Transformation results:" << endl;
