@@ -44,23 +44,23 @@ int main (int argc, char** argv) {
   int32_t k=0;
   for (double x=-2; x<2; x+=0.04) {
     for (double y=-2; y<2; y+=0.04) {
-      double z=5*x*exp(-x*x-y*y);
-      M[k*3+0] = x;
-      M[k*3+1] = y;
-      M[k*3+2] = z;
-      T[k*3+0] = x-1;
-      T[k*3+1] = y-0.5;
-      T[k*3+2] = z+1;
+      double z=5*x*exp(-x*x-y*y) + 1.0;
+      M[k*3+0] = x / z;
+      M[k*3+1] = y / z;
+      M[k*3+2] = 1.0;
+      T[k*3+0] = x-0.01;
+      T[k*3+1] = y-0.01;
+      T[k*3+2] = z+0.01;
       k++;
     }
   }
 
-  for (int i = 0; i < num - 1; i++) {
+  /*for (int i = 0; i < num - 1; i++) {
     int j = std::rand() % (num - i);
     for (int t = 0; t < 3; t++) {
       std::swap(M[i * 3 + t], M[(num - j - 1) * 3 + t]);
     }
-  }
+  }*/
 
   // start with identity as initial transformation
   // in practice you might want to use some kind of prediction here
@@ -70,7 +70,7 @@ int main (int argc, char** argv) {
   // run point-to-plane ICP (-1 = no outlier threshold)
   cout << endl << "Running ICP (point-to-plane, no outliers)" << endl;
   IcpPointToPlane icp(M,num,dim);
-  double residual = icp.fit(T,5000,R,t,-1);
+  double residual = icp.fit(T,num / 2.0,R,t,-1);
 
   // results
   cout << endl << "Transformation results:" << endl;

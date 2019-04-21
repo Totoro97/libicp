@@ -9,6 +9,7 @@
 // Implement a kd tree for fast searching of points in a fixed data base
 // in k-dimensional Euclidean space.
 
+#include <tuple>
 #include <vector>
 #include <algorithm>
 
@@ -110,7 +111,8 @@ namespace kdtree {
     
     int r_count_around_point(int idxin, int correltime, float r2);
     // like r_count, c
-    
+
+    std::tuple<float, float, float> pointByIdx(int idx);
     friend class KDTreeNode;
     friend class SearchRecord;
     

@@ -489,7 +489,10 @@ namespace kdtree {
       return(result.size());
     }
   }
-  
+
+  std::tuple<float, float, float> KDTree::pointByIdx(int idx) {
+    return std::make_tuple(the_data[idx][0], the_data[idx][1], the_data[idx][2]);
+  }
   //
   //        KDTREE_NODE implementation
   //

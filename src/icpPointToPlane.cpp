@@ -139,7 +139,8 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
 #pragma omp parallel for private(i) default(none) shared(T,active,nact,p_m,p_t,A,b,r00,r01,r02,r10,r11,r12,r20,r21,r22,t0,t1,t2) // schedule (dynamic,2)
     for (i=0; i<nact; i++) {
       // kd tree query + result
-      std::vector<float>         query(m_dim);
+      std::vector<float> query(m_dim);
+      std::vector<float> query_(m_dim);
       kdtree::KDTreeResultVector result;
 
       // get index of active point
@@ -150,8 +151,14 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
       query[1] = (float)(r10*T[idx*3+0] + r11*T[idx*3+1] + r12*T[idx*3+2] + t1);
       query[2] = (float)(r20*T[idx*3+0] + r21*T[idx*3+1] + r22*T[idx*3+2] + t2);
 
+      // ------- Modification --------
+
+      query_[0] = query[0] / query[2];
+      query_[1] = query[1] / query[2];
+      query_[2] = 1.0;
+
       // search nearest neighbor
-      m_kd_tree->n_nearest(query,1,result);
+      m_kd_tree->n_nearest(query_,1,result);
 
       // model point
       double dx = m_kd_tree->the_data[result[0].idx][0];
@@ -301,7 +308,8 @@ std::vector<int32_t> IcpPointToPlane::getInliers (double *T,const int32_t T_num,
   return inliers;
 }
 
-void IcpPointToPlane::computeNormal (const kdtree::KDTreeResultVector &neighbors,double *M_normal,const double flatness) {
+void IcpPointToPlane::computeNormal (
+  const std::tuple<float, float, float> &pt, const kdtree::KDTreeResultVector &neighbors,double *M_normal,const double flatness) {
   
   // dimensionality 2
   if (m_dim==2) {
@@ -332,8 +340,43 @@ void IcpPointToPlane::computeNormal (const kdtree::KDTreeResultVector &neighbors
   
   // dimensionality 3
   } else {
-    
+    // Modification
+    Matrix P(neighbors.size(),2);
+    Matrix mu(1,2);
+    for (uint32_t i=0; i<neighbors.size(); i++) {
+      double x = m_kd_tree->the_data[neighbors[i].idx][0];
+      double y = m_kd_tree->the_data[neighbors[i].idx][1];
+      P.val[i][0] = x;
+      P.val[i][1] = y;
+      mu.val[0][0] += x;
+      mu.val[0][1] += y;
+    }
+    // zero mean
+    mu       = mu/(double)neighbors.size();
+    Matrix Q = P - Matrix::ones(neighbors.size(),1)*mu;
+
+    // principal component analysis
+    Matrix H = ~Q*Q;
+    Matrix U,W,V;
+    H.svd(U,W,V);
+
+    // normal
+    M_normal[0] = U.val[0][1];
+    M_normal[1] = U.val[1][1];
+    double pt_x = std::get<0>(pt);
+    double pt_y = std::get<1>(pt);
+    double pt_z = std::get<2>(pt);
+    M_normal[2] = -(M_normal[0] * pt_x + M_normal[1] * pt_y) / pt_z;
+    double norm = 0;
+    for (int t = 0; t < 3; t++) {
+      norm += M_normal[t] * M_normal[t];
+    }
+    norm = std::sqrt(norm);
+    for (int t = 0; t < 3; t++) {
+      M_normal[t] /= norm;
+    }
     // extract neighbors
+    /*
     Matrix P(neighbors.size(),3);
     Matrix mu(1,3);
     for (uint32_t i=0; i<neighbors.size(); i++) {
@@ -361,6 +404,7 @@ void IcpPointToPlane::computeNormal (const kdtree::KDTreeResultVector &neighbors
     M_normal[0] = U.val[0][2];
     M_normal[1] = U.val[1][2];
     M_normal[2] = U.val[2][2];
+    */
   }
 }
 
@@ -370,8 +414,8 @@ double* IcpPointToPlane::computeNormals (const int32_t num_neighbors,const doubl
   for (int32_t i=0; i<m_kd_tree->N; i++) {
     m_kd_tree->n_nearest_around_point(i,0,num_neighbors,neighbors);
     // m_kd_tree->r_nearest_around_point(i,0,0.05,neighbors);
-    if (m_dim==2) computeNormal(neighbors,M_normal+i*2,flatness);
-    else        computeNormal(neighbors,M_normal+i*3,flatness);
+    if (m_dim==2) computeNormal(m_kd_tree->pointByIdx(i), neighbors,M_normal+i*2,flatness);
+    else        computeNormal(m_kd_tree->pointByIdx(i), neighbors,M_normal+i*3,flatness);
   }
 
   return M_normal;
