@@ -32,9 +32,9 @@ public:
 
 private:
 
-  double fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,const std::vector<int32_t> &active);
-  std::vector<int32_t> getInliers (double *T,const int32_t T_num,const Matrix &R,const Matrix &t,const double indist);
-  double getResidual(double *T,const int32_t T_num,const Matrix &R,const Matrix &t,const std::vector<int> &active);
+  double fitStep (double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,const std::vector<int32_t> &active);
+  std::vector<int32_t> getInliers (double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const double indist);
+  double getResidual(double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const std::vector<int> &active);
 };
 
 #endif // ICP_POINT_TO_POINT_H

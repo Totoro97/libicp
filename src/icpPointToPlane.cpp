@@ -27,6 +27,7 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 #include "icpPointToPlane.h"
 
 using namespace std;
+using namespace ICP;
 
 // Also see (3d part): "Linear Least-Squares Optimization for Point-to-Plane ICP Surface Registration" (Kok-Lim Low)
 double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,const std::vector<int32_t> &active) {
@@ -497,4 +498,10 @@ double IcpPointToPlane::getResidual( double *T,const int32_t T_num,const Matrix 
 	return residual;
 }
 
-
+std::vector<double> IcpPointToPlane::computeRayNormal(std::vector<float> query) {
+  kdtree::KDTreeResultVector result;
+  m_kd_tree->n_nearest(query,1,result);
+  int idx = result[0].idx;
+  return { m_kd_tree->the_data[idx][0], m_kd_tree->the_data[idx][1], m_kd_tree->the_data[idx][2],
+           M_normal[idx * 3 + 0], M_normal[idx * 3 + 1], M_normal[idx * 3 + 2] };
+}

@@ -60,23 +60,23 @@ public:
 	// fit template to model yielding R,t (M = R*T + t)
 	// input:  T ....... pointer to first template point
 	//         T_num ... number of template points
-	//         R ....... initial rotation matrix
+	//         R ....... initial rotation ICP::Matrix
 	//         t ....... initial translation vector
 	//         indist .. inlier distance (if <=0: use all points)
-	// output: R ....... final rotation matrix
+	// output: R ....... final rotation ICP::Matrix
 	//         t ....... final translation vector
-	double fit(double *T,const int32_t T_num,Matrix &R,Matrix &t,double indist=-1);
+	double fit(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,double indist=-1);
 
   
 private:
 	// iterative fitting
-	void fitIterate(double *T,const int32_t T_num,Matrix &R,Matrix &t, double indist = -1);
+	void fitIterate(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t, double indist = -1);
 
 	// inherited classes need to overwrite these functions
-	virtual double               fitStep(double *T,const int32_t T_num,Matrix &R,Matrix &t,const std::vector<int32_t> &active) = 0;
-	virtual std::vector<int32_t> getInliers(double *T,const int32_t T_num,const Matrix &R,const Matrix &t,const double indist) = 0;
+	virtual double               fitStep(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,const std::vector<int32_t> &active) = 0;
+	virtual std::vector<int32_t> getInliers(double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const double indist) = 0;
 	
-	virtual double getResidual(double *T,const int32_t T_num,const Matrix &R,const Matrix &t,const std::vector<int> &active)=0;
+	virtual double getResidual(double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const std::vector<int> &active)=0;
   
 protected:
   
@@ -92,7 +92,7 @@ protected:
 
 	double	m_inlier_ratio;  // active.size()/ T_num
 	double  m_residual;      // residual of icp
-	Matrix	m_covariance;	 // covariance of the result
+	ICP::Matrix	m_covariance;	 // covariance of the result
 };
 
 #endif // ICP_H

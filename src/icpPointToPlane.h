@@ -34,12 +34,13 @@ public:
   virtual ~IcpPointToPlane () {
     free(M_normal);
   }
+  std::vector<double> computeRayNormal(std::vector<float> query);
 
 private:
 
-	double fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,const std::vector<int32_t> &active);
-	std::vector<int32_t> getInliers (double *T,const int32_t T_num,const Matrix &R,const Matrix &t,const double indist);
-	double getResidual(double *T,const int32_t T_num,const Matrix &R,const Matrix &t,const std::vector<int> &active);
+	double fitStep (double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,const std::vector<int32_t> &active);
+	std::vector<int32_t> getInliers (double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const double indist);
+	double getResidual(double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const std::vector<int> &active);
 	// utility functions to compute normals from the model tree
 	void computeNormal (const std::tuple<float, float, float> &pt, const kdtree::KDTreeResultVector &neighbors,double *M_normal,const double flatness);
 	double* computeNormals (const int32_t num_neighbors,const double flatness);

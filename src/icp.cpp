@@ -20,6 +20,7 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 #include "icp.h"
 using namespace std;
+using namespace ICP;
 
 Icp::Icp (double *M,const int32_t M_num,const int32_t dim) 
 :m_dim(dim), m_max_iter(200), m_min_delta(1e-4) 

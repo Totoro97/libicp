@@ -26,6 +26,7 @@ Street, Fifth Floor, Boston, MA 02110-1301, USA
 #include "icpPointToPlane.h"
 
 using namespace std;
+using namespace ICP;
 
 int main (int argc, char** argv) {
 

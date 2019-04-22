@@ -1,5 +1,5 @@
 # project
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.0)
 project (libicp)
 
 # directories
@@ -30,5 +30,7 @@ FILE(GLOB LIBICP_SRC_FILES "src/*.cpp")
 set(CMAKE_BUILD_TYPE Release)
 
 # build demo program
-add_executable(icp ${LIBICP_SRC_FILES})
+add_executable(icp_demo ${LIBICP_SRC_FILES} demo.cpp)
+
+add_library(icp ${LIBICP_SRC_FILES})
 
