@@ -133,8 +133,8 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
     double t0  = t.val[0][0]; double t1  = t.val[1][0]; double t2  = t.val[2][0];
 
     // init A and b
-    Matrix A(nact,6);
-    Matrix b(nact,1);
+    Matrix A(nact + 3, 6);
+    Matrix b(nact + 3, 1);
 
     // establish correspondences
 #pragma omp parallel for private(i) default(none) shared(T,active,nact,p_m,p_t,A,b,r00,r01,r02,r10,r11,r12,r20,r21,r22,t0,t1,t2) // schedule (dynamic,2)
@@ -186,6 +186,14 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
       b.val[i][0] = nx*dx+ny*dy+nz*dz-nx*sx-ny*sy-nz*sz;    
     }
 
+    // regularization
+    int idx = nact - 1;
+    double weight = 1e-1;
+    for (int t = 0; t < 3; t++) {
+      idx++;
+      A.val[idx][3 + t] = weight;
+      b.val[idx][0] = 0.0;
+    }
     // linear least square matrices
     Matrix A_ = ~A*A;
     Matrix b_ = ~A*b;
