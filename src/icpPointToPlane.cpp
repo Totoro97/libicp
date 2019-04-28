@@ -133,8 +133,8 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
     double t0  = t.val[0][0]; double t1  = t.val[1][0]; double t2  = t.val[2][0];
 
     // init A and b
-    Matrix A(nact + 3, 6);
-    Matrix b(nact + 3, 1);
+    Matrix A(nact * 2 + 3, 6);
+    Matrix b(nact * 2 + 3, 1);
 
     // establish correspondences
 #pragma omp parallel for private(i) default(none) shared(T,active,nact,p_m,p_t,A,b,r00,r01,r02,r10,r11,r12,r20,r21,r22,t0,t1,t2) // schedule (dynamic,2)
@@ -171,24 +171,38 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
       double ny = M_normal[result[0].idx*3+1];
       double nz = M_normal[result[0].idx*3+2];
 
+      // model point tang
+      double tx = M_tang[result[0].idx*3+0];
+      double ty = M_tang[result[0].idx*3+1];
+      double tz = M_tang[result[0].idx*3+2];
+
       // template point
       double sx = query[0];
       double sy = query[1];
       double sz = query[2];
 
       // setup least squares system
-      A.val[i][0] = nz*sy-ny*sz;
-      A.val[i][1] = nx*sz-nz*sx;
-      A.val[i][2] = ny*sx-nx*sy;
-      A.val[i][3] = nx;
-      A.val[i][4] = ny;
-      A.val[i][5] = nz;
-      b.val[i][0] = nx*dx+ny*dy+nz*dz-nx*sx-ny*sy-nz*sz;    
+      A.val[i * 2][0] = nz*sy-ny*sz;
+      A.val[i * 2][1] = nx*sz-nz*sx;
+      A.val[i * 2][2] = ny*sx-nx*sy;
+      A.val[i * 2][3] = nx;
+      A.val[i * 2][4] = ny;
+      A.val[i * 2][5] = nz;
+      b.val[i * 2][0] = nx*dx+ny*dy+nz*dz-nx*sx-ny*sy-nz*sz;
+
+      const double tang_weight = 0.1;
+      A.val[i * 2 + 1][0] = tang_weight * (tz*sy-ty*sz);
+      A.val[i * 2 + 1][1] = tang_weight * (tx*sz-tz*sx);
+      A.val[i * 2 + 1][2] = tang_weight * (ty*sx-tx*sy);
+      A.val[i * 2 + 1][3] = tang_weight * (tx);
+      A.val[i * 2 + 1][4] = tang_weight * (ty);
+      A.val[i * 2 + 1][5] = tang_weight * (tz);
+      b.val[i * 2 + 1][0] = tang_weight * (tx*dx+ty*dy+tz*dz-tx*sx-ty*sy-tz*sz);
     }
 
     // regularization
     int idx = nact - 1;
-    double weight = 1e-1;
+    double weight = 1e-2;
     for (int t = 0; t < 3; t++) {
       idx++;
       A.val[idx][3 + t] = weight;
@@ -318,7 +332,7 @@ std::vector<int32_t> IcpPointToPlane::getInliers (double *T,const int32_t T_num,
 }
 
 void IcpPointToPlane::computeNormal (
-  const std::tuple<float, float, float> &pt, const kdtree::KDTreeResultVector &neighbors,double *M_normal,const double flatness) {
+  const std::tuple<float, float, float> &pt, const kdtree::KDTreeResultVector &neighbors,double *M_normal,double *M_tang, const double flatness) {
   
   // dimensionality 2
   if (m_dim==2) {
@@ -384,6 +398,20 @@ void IcpPointToPlane::computeNormal (
     for (int t = 0; t < 3; t++) {
       M_normal[t] /= norm;
     }
+
+    norm = std::sqrt(pt_x * pt_x + pt_y * pt_y + pt_z * pt_z);
+    pt_x /= norm;
+    pt_y /= norm;
+    pt_z /= norm;
+
+    M_tang[0] = M_normal[1] * pt_z - M_normal[2] * pt_y;
+    M_tang[1] = -M_normal[0] * pt_z + M_normal[2] * pt_x;
+    M_tang[2] = M_normal[0] * pt_y - M_normal[1] * pt_x;
+    // std::cout << M_tang[0] * pt_x + M_tang[1] * pt_y + M_tang[2] * pt_z << std::endl;
+    // M_tang[0] = M_normal[0];
+    // M_tang[1] = M_normal[1];
+    // M_tang[2] = M_normal[2];
+
     // extract neighbors
     /*
     Matrix P(neighbors.size(),3);
@@ -418,13 +446,14 @@ void IcpPointToPlane::computeNormal (
 }
 
 double* IcpPointToPlane::computeNormals (const int32_t num_neighbors,const double flatness) {
-  double *M_normal = (double*)malloc(m_kd_tree->N*m_dim*sizeof(double));
+  double *M_normal = (double*)malloc(m_kd_tree->N*2*m_dim*sizeof(double));
+  double *M_tang = M_normal + m_kd_tree->N * m_dim;
   kdtree::KDTreeResultVector neighbors;
   for (int32_t i=0; i<m_kd_tree->N; i++) {
     m_kd_tree->n_nearest_around_point(i,0,num_neighbors,neighbors);
     // m_kd_tree->r_nearest_around_point(i,0,0.05,neighbors);
-    if (m_dim==2) computeNormal(m_kd_tree->pointByIdx(i), neighbors,M_normal+i*2,flatness);
-    else        computeNormal(m_kd_tree->pointByIdx(i), neighbors,M_normal+i*3,flatness);
+    if (m_dim==2) computeNormal(m_kd_tree->pointByIdx(i), neighbors,M_normal+i*2, M_tang+i*2,flatness);
+    else        computeNormal(m_kd_tree->pointByIdx(i), neighbors,M_normal+i*3, M_tang+i*3, flatness);
   }
 
   return M_normal;

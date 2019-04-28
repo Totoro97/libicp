@@ -25,8 +25,7 @@ using namespace ICP;
 Icp::Icp (double *M,const int32_t M_num,const int32_t dim) 
 :m_dim(dim), m_max_iter(200), m_min_delta(1e-4) 
 {
-  
-	// check for correct dimensionality
+  // check for correct dimensionality
 	if (dim!=2 && dim!=3) {
 		cout << "ERROR: LIBICP works only for data of dimensionality 2 or 3" << endl;
 		m_kd_tree = 0;

@@ -71,7 +71,7 @@ int main (int argc, char** argv) {
   // run point-to-plane ICP (-1 = no outlier threshold)
   cout << endl << "Running ICP (point-to-plane, no outliers)" << endl;
   IcpPointToPlane icp(M,num,dim);
-  double residual = icp.fit(T,num / 2.0,R,t,-1);
+  double residual = icp.fit(T,num,R,t,-1);
 
   // results
   cout << endl << "Transformation results:" << endl;
