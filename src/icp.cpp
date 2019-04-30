@@ -23,7 +23,7 @@ using namespace std;
 using namespace ICP;
 
 Icp::Icp (double *M,const int32_t M_num,const int32_t dim) 
-:m_dim(dim), m_max_iter(200), m_min_delta(1e-4) 
+:m_dim(dim), m_max_iter(200), m_min_delta(1e-3)
 {
   // check for correct dimensionality
 	if (dim!=2 && dim!=3) {
@@ -94,12 +94,13 @@ void Icp::fitIterate( double *T,const int32_t T_num,Matrix &R,Matrix &t, double 
 	}
 	double delta = 1000;
 	int32_t iter;
+	Matrix initial_t = t;
 	for(iter=0; iter<m_max_iter && delta>m_min_delta; iter++){
 		if(indist>0){
 			indist = std::max(indist*0.9,0.05);
 			m_active = getInliers(T,T_num,R,t,indist);
 			m_inlier_ratio = (double)m_active.size()/T_num;
 		}
-		delta=fitStep(T,T_num,R,t,m_active);
+		delta=fitStep(T,T_num,R,t,initial_t,m_active);
 	}
 }

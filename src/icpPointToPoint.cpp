@@ -30,7 +30,7 @@ using namespace std;
 using namespace ICP;
 
 // Also see (3d part): "Least-Squares Fitting of Two 3-D Point Sets" (Arun, Huang and Blostein)
-double IcpPointToPoint::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,const std::vector<int32_t> &active) {
+double IcpPointToPoint::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,ICP::Matrix &initial_t,const std::vector<int32_t> &active) {
   
   int i;
   int nact = (int)active.size();

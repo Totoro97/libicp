@@ -30,7 +30,7 @@ using namespace std;
 using namespace ICP;
 
 // Also see (3d part): "Linear Least-Squares Optimization for Point-to-Plane ICP Surface Registration" (Kok-Lim Low)
-double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,const std::vector<int32_t> &active) {
+double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,Matrix &initial_t,const std::vector<int32_t> &active) {
 
   int32_t i;
   int32_t nact = (int)active.size();
@@ -133,11 +133,11 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
     double t0  = t.val[0][0]; double t1  = t.val[1][0]; double t2  = t.val[2][0];
 
     // init A and b
-    Matrix A(nact * 2 + 3, 6);
-    Matrix b(nact * 2 + 3, 1);
+    Matrix A(nact * 2 + 6, 6);
+    Matrix b(nact * 2 + 6, 1);
 
     // establish correspondences
-#pragma omp parallel for private(i) default(none) shared(T,active,nact,p_m,p_t,A,b,r00,r01,r02,r10,r11,r12,r20,r21,r22,t0,t1,t2) // schedule (dynamic,2)
+#pragma omp parallel for private(i) default(none) shared(T,active,nact,p_m,p_t,A,b,initial_t,r00,r01,r02,r10,r11,r12,r20,r21,r22,t0,t1,t2) // schedule (dynamic,2)
     for (i=0; i<nact; i++) {
       // kd tree query + result
       std::vector<float> query(m_dim);
@@ -190,7 +190,7 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
       A.val[i * 2][5] = nz;
       b.val[i * 2][0] = nx*dx+ny*dy+nz*dz-nx*sx-ny*sy-nz*sz;
 
-      const double tang_weight = 0.1;
+      const double tang_weight = 0.0;
       A.val[i * 2 + 1][0] = tang_weight * (tz*sy-ty*sz);
       A.val[i * 2 + 1][1] = tang_weight * (tx*sz-tz*sx);
       A.val[i * 2 + 1][2] = tang_weight * (ty*sx-tx*sy);
@@ -201,11 +201,11 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
     }
 
     // regularization
-    int idx = nact - 1;
-    double weight = 1e-2;
-    for (int t = 0; t < 3; t++) {
+    int idx = nact * 2 - 1;
+    double weight = 0.5;
+    for (int u = 0; u < 6; u++) {
       idx++;
-      A.val[idx][3 + t] = weight;
+      A.val[idx][u] = weight;
       b.val[idx][0] = 0.0;
     }
     // linear least square matrices

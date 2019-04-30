@@ -73,7 +73,7 @@ private:
 	void fitIterate(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t, double indist = -1);
 
 	// inherited classes need to overwrite these functions
-	virtual double               fitStep(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,const std::vector<int32_t> &active) = 0;
+	virtual double               fitStep(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,ICP::Matrix &initial_t, const std::vector<int32_t> &active) = 0;
 	virtual std::vector<int32_t> getInliers(double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const double indist) = 0;
 	
 	virtual double getResidual(double *T,const int32_t T_num,const ICP::Matrix &R,const ICP::Matrix &t,const std::vector<int> &active)=0;
