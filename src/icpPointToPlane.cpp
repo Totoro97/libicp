@@ -31,7 +31,6 @@ using namespace ICP;
 
 // Also see (3d part): "Linear Least-Squares Optimization for Point-to-Plane ICP Surface Registration" (Kok-Lim Low)
 double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix &t,Matrix &initial_t,const std::vector<int32_t> &active) {
-
   int32_t i;
   int32_t nact = (int)active.size();
 
@@ -154,6 +153,10 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
 
       // ------- Modification --------
 
+      double t_0 = query[0];
+      double t_1 = query[1];
+      double t_2 = query[2];
+
       query_[0] = query[0] / query[2];
       query_[1] = query[1] / query[2];
       query_[2] = 1.0;
@@ -177,9 +180,9 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
       double tz = M_tang[result[0].idx*3+2];
 
       // template point
-      double sx = query[0];
-      double sy = query[1];
-      double sz = query[2];
+      double sx = t_0;
+      double sy = t_1;
+      double sz = t_2;
 
       // setup least squares system
       A.val[i * 2][0] = nz*sy-ny*sz;
@@ -202,7 +205,7 @@ double IcpPointToPlane::fitStep (double *T,const int32_t T_num,Matrix &R,Matrix 
 
     // regularization
     int idx = nact * 2 - 1;
-    double weight = 0.5;
+    double weight = 1e-1;
     for (int u = 0; u < 6; u++) {
       idx++;
       A.val[idx][u] = weight;
@@ -539,6 +542,11 @@ std::vector<double> IcpPointToPlane::computeRayNormal(std::vector<float> query) 
   kdtree::KDTreeResultVector result;
   m_kd_tree->n_nearest(query,1,result);
   int idx = result[0].idx;
+  return { m_kd_tree->the_data[idx][0], m_kd_tree->the_data[idx][1], m_kd_tree->the_data[idx][2],
+           M_normal[idx * 3 + 0], M_normal[idx * 3 + 1], M_normal[idx * 3 + 2] };
+}
+
+std::vector<double> IcpPointToPlane::computRayNormalByIdx(int idx) {
   return { m_kd_tree->the_data[idx][0], m_kd_tree->the_data[idx][1], m_kd_tree->the_data[idx][2],
            M_normal[idx * 3 + 0], M_normal[idx * 3 + 1], M_normal[idx * 3 + 2] };
 }

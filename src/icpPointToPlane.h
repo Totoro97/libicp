@@ -37,6 +37,7 @@ public:
     free(M_normal);
   }
   std::vector<double> computeRayNormal(std::vector<float> query);
+  std::vector<double> computRayNormalByIdx(int idx);
 
 private:
 

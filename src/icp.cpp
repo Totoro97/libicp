@@ -83,6 +83,50 @@ double Icp::fit( double *T,const int32_t T_num,Matrix &R,Matrix &t,double indist
 	return getResidual(T,T_num,R,t,m_active);
 }
 
+double Icp::fitOnce( double *T,const int32_t T_num,Matrix &R,Matrix &t,double indist/*=-1*/)
+{
+  // make sure we have a model tree
+  if (!m_kd_tree) {
+    cout << "ERROR: No model available." << endl;
+    return 0;
+  }
+
+  // check for minimum number of points
+  if (T_num<5) {
+    cout << "ERROR: Icp works only with at least 5 template points" << endl;
+    return 0;
+  }
+
+  // set active points
+  vector<int32_t> active;
+  if (indist<=0) {
+    active.clear();
+    for (int32_t i=0; i<T_num; i++)
+      active.push_back(i);
+  } else {
+    active = getInliers(T,T_num,R,t,indist);
+  }
+
+  if(indist<=0){
+    m_active.clear();m_active.resize(T_num);
+    for(int32_t i=0;i<T_num;i++){
+      m_active[i] = i;
+    }
+    m_inlier_ratio = 1;
+  }
+  double delta = 1000;
+  int32_t iter;
+  Matrix initial_t = t;
+  if(indist>0) {
+    indist = std::max(indist*0.9,0.05);
+    m_active = getInliers(T,T_num,R,t,indist);
+    m_inlier_ratio = (double)m_active.size()/T_num;
+  }
+  delta=fitStep(T,T_num,R,t,initial_t,m_active);
+
+  return getResidual(T,T_num,R,t,m_active);
+}
+
 void Icp::fitIterate( double *T,const int32_t T_num,Matrix &R,Matrix &t, double indist /*= -1*/ )
 {
 	if(indist<=0){
@@ -96,11 +140,14 @@ void Icp::fitIterate( double *T,const int32_t T_num,Matrix &R,Matrix &t, double 
 	int32_t iter;
 	Matrix initial_t = t;
 	for(iter=0; iter<m_max_iter && delta>m_min_delta; iter++){
-		if(indist>0){
+		if(indist>0) {
 			indist = std::max(indist*0.9,0.05);
 			m_active = getInliers(T,T_num,R,t,indist);
 			m_inlier_ratio = (double)m_active.size()/T_num;
 		}
 		delta=fitStep(T,T_num,R,t,initial_t,m_active);
+		// std::cout << "delta: " << delta << std::endl;
 	}
+	// std::cout << "iter num: " << iter << std::endl;
+	// std::cout << "----------------------------- ICP end ------------------------------" << std::endl;
 }

@@ -66,8 +66,9 @@ public:
 	// output: R ....... final rotation ICP::Matrix
 	//         t ....... final translation vector
 	double fit(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,double indist=-1);
+  double fitOnce(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t,double indist=-1);
 
-  
+
 private:
 	// iterative fitting
 	void fitIterate(double *T,const int32_t T_num,ICP::Matrix &R,ICP::Matrix &t, double indist = -1);
